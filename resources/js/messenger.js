@@ -127,35 +127,39 @@ function debounce(callback, delay) {
     }
 }
 
- /**
- *------------------------
- * fetch id data
- *------------------------
+/**
+ * ----------------------------------------------
+ * Fetch id data of user and update the view
+ * ----------------------------------------------
  */
-    function IDinfo(id){
-        $.ajax({
-            method:'GET',
-            url:'messenger/id-info',
-            data:{id:id},
-            beforeSend:function(){
-                NProgress.start();
-                enableChatBoxLoader();
-            },
-            success:function(data){
-                $(".messenger-header").find("img").attr("src", data.fetch.avatar);
-                $(".messenger-header").find("h4").text(data.fetch.name);
 
-                $(".messenger-info-view .user_photo").find("img").attr("src", data.fetch.avatar);
-                $(".messenger-info-view").find(".user_name").text(data.fetch.name);
-                $(".messenger-info-view").find(".user_unique_name").text(data.fetch.user_name);
-                NProgress.done();
-                disableChatBoxLoader();
-            },
-            error:function(xhr,status,error){
-                disableChatBoxLoader();
-            }
-        })
-    }
+function IDinfo(id) {
+    $.ajax({
+        method: 'GET',
+        url: '/messenger/id-info',
+        data: { id: id },
+        beforeSend: function () {
+            NProgress.start();
+            enableChatBoxLoader();
+        },
+        success: function (data) {
+            // fetch messages
+            fetchMessages(data.fetch.id, true);
+
+            $(".messenger-header").find("img").attr("src", data.fetch.avatar);
+            $(".messenger-header").find("h4").text(data.fetch.name);
+
+            $(".messenger-info-view .user_photo").find("img").attr("src", data.fetch.avatar);
+            $(".messenger-info-view").find(".user_name").text(data.fetch.name);
+            $(".messenger-info-view").find(".user_unique_name").text(data.fetch.user_name);
+            NProgress.done();
+        },
+        error: function (xhr, status, error) {
+            disableChatBoxLoader();
+        }
+    });
+}
+
 
  /**
  *------------------------
@@ -202,6 +206,9 @@ function debounce(callback, delay) {
         })
     }
  }
+
+
+
  //handle the send msg in the body
  function sendTempMessageCard(message, tempId, attachment = false) {
     if (attachment) {
@@ -232,6 +239,75 @@ function debounce(callback, delay) {
 
 }
 
+/**
+ * ----------------------------------------------
+ * Fetch messages from database
+ * ----------------------------------------------
+ */
+
+let messagesPage = 1;
+let noMoreMessages = false;
+let messagesLoading = false;
+
+function fetchMessages(id, newFetch = false) {
+    if (newFetch) {
+        messagesPage = 1;
+        noMoreMessages = false;
+    }
+
+    if (!noMoreMessages && !messagesLoading) {
+        $.ajax({
+            method: "GET",
+            url: "/messenger/fetch-messages",
+            data: {
+                _token: csrf_token,
+                id: id,
+                page: messagesPage
+            },
+            beforeSend: function () {
+                messagesLoading = true;
+                let loader = `
+                <div class="text-center messages-loader">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                `;
+                messageBoxContainer.prepend(loader);
+
+            },
+            success: function (data) {
+                messagesLoading = false;
+                // remove the loader
+                messageBoxContainer.find(".messages-loader").remove();
+                // make messages seen
+
+                if (messagesPage == 1) {
+                    messageBoxContainer.html(data.messages);
+                    scrollToBottom(messageBoxContainer);
+                } else {
+                    const lastMsg = $(messageBoxContainer).find(".message-card").first();
+                    const curOffset = lastMsg.offset().top - messageBoxContainer.scrollTop();
+
+                    messageBoxContainer.prepend(data.messages);
+                    messageBoxContainer.scrollTop(lastMsg.offset().top - curOffset);
+                }
+
+                // pagination lock and page increment
+                noMoreMessages = messagesPage >= data?.last_page;
+                if (!noMoreMessages) messagesPage += 1;
+
+
+                disableChatBoxLoader();
+            },
+            error: function (xhr, status, error) {
+                console.log(error);
+            }
+        })
+    }
+}
+
+
 //function for cancel the img and msg
 function messageFormRest(){
     $('.attachment-block').addClass('d-none');
@@ -239,6 +315,20 @@ function messageFormRest(){
     messageForm.trigger('reset');
 
 }
+
+
+/**
+ * ----------------------------------------------
+ * Slide to bottom on action
+ * ----------------------------------------------
+ */
+function scrollToBottom(container) {
+    $(container).stop().animate({
+        scrollTop: $(container)[0].scrollHeight
+    });
+}
+
+
 
 
 
@@ -295,6 +385,11 @@ $('.attachment-input').change(function () {
 $('.cancel-attachment').on('click',function(){
     messageFormRest();
 })
+
+    // message pagination
+    actionOnScroll(".wsus__chat_area_body", function () {
+        fetchMessages(getMessengerId());
+    }, true)
 
 
 
