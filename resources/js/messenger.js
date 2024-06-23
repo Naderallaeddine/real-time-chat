@@ -308,6 +308,57 @@ function fetchMessages(id, newFetch = false) {
 }
 
 
+
+    /**
+ * ----------------------------------------------
+ * Fetch Contact list from database
+ * ----------------------------------------------
+ */
+
+let contactsPage = 1;
+let noMoreContacts = false;
+let contactLoading = false;
+
+function getContacts() {
+    if (!contactLoading && !noMoreContacts) {
+        $.ajax({
+            method: "GET",
+            url: "messenger/fetch-contacts",
+            data: { page: contactsPage },
+            beforeSend: function () {
+                contactLoading = true;
+                let loader = `
+                <div class="text-center contact-loader">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                `;
+                messengerContactBox.append(loader)
+            },
+            success: function (data) {
+                contactLoading = false;
+                messengerContactBox.find(".contact-loader").remove();
+                if (contactsPage < 2) {
+                    messengerContactBox.html(data.contacts);
+                } else {
+                    messengerContactBox.append(data.contacts);
+                }
+
+                noMoreContacts = contactsPage >= data?.last_page;
+                if (!noMoreContacts) contactsPage += 1;
+
+                updateUserActiveList()
+            },
+            error: function (xhr, status, error) {
+                contactLoading = false;
+                messengerContactBox.find(".contact-loader").remove();
+            }
+        })
+    }
+}
+
+
 //function for cancel the img and msg
 function messageFormRest(){
     $('.attachment-block').addClass('d-none');
@@ -338,6 +389,7 @@ function scrollToBottom(container) {
  * Dom LOad
  *------------------------
  */
+ getContacts();
 
  $('#select_file').change(function () {
     imagePreview(this, '.profile-image-preview')
