@@ -27,7 +27,7 @@
     {{-- Search Form  --}}
     @include('messenger.layouts.search-form')
 
-     {{-- S    <div class="wsus__favourite_user">
+    <div class="wsus__favourite_user">
         <div class="top">favourites</div>
         <div class="row favourite_user_slider">
             @foreach ($favoriteList as $item)
@@ -43,8 +43,7 @@
             @endforeach
 
         </div>
-    </div>--}}
-
+    </div>
 
     <div class="wsus__save_message">
         <div class="top">your space</div>
