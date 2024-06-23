@@ -165,6 +165,29 @@ class MessengerController extends Controller
         return view('messenger.components.contact-list-item', compact('lastMessage', 'unseenCounter', 'user'))->render();
 
     }
+        // update contact item
+        function updateContactItem(Request $request) {
+            // get user data
+            $user = User::where('id', $request->user_id)->first();
+
+            if(!$user) {
+                return response()->json([
+                    'message' => 'user not found'
+                ], 401);
+            }
+            $contactItem = $this->getContactItem($user);
+            return response()->json([
+                'contact_item' => $contactItem
+            ], 200);
+        }
+
+        function makeSeen(Request $request) {
+            Message::where('from_id', $request->id)
+                ->where('to_id', Auth::user()->id)
+                ->where('seen', 0)->update(['seen' => 1]);
+
+            return true;
+        }
 
         // add/remove to favorite list
         function favorite(Request $request) {
@@ -182,4 +205,17 @@ class MessengerController extends Controller
                 return response(['status' => 'removed']);
             }
         }
+
+            // delete message
+    function deleteMessage(Request $request) {
+        $message = Message::findOrFail($request->message_id);
+        if($message->from_id == Auth::user()->id) {
+            $message->delete();
+            return response()->json([
+                'id' => $request->message_id
+            ], 200);
+        }
+        return;
+    }
+
 }

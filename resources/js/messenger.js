@@ -151,7 +151,7 @@ function IDinfo(id) {
                 $('.nothing_share').removeClass('d-none');
             }
 
-            
+
 
             data.favorite == 1
                 ? $('.favourite').addClass('active')
@@ -398,11 +398,48 @@ function star(user_id) {
     })
 }
 
+/**
+ * ----------------------------------------------
+ * Delete message
+ * ----------------------------------------------
+ */
+
+function deleteMessage(message_id) {
+    Swal.fire({
+        title: "Are you sure?",
+        text: "You won't be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                method: 'DELETE',
+                url: '/messenger/delete-message',
+                data: { _token: csrf_token, message_id: message_id },
+                beforeSend: function () {
+                    $(`.message-card[data-id="${message_id}"]`).remove();
+                },
+                success: function (data) {
+                    updateContactItem(getMessengerId());
+                },
+                error: function (xhr, status, error) { }
+            })
+        }
+    });
+}
+
 //function for cancel the img and msg
 function messageFormRest() {
     $(".attachment-block").addClass("d-none");
     $(".emojionearea-editor").text("");
     messageForm.trigger("reset");
+}
+function updateSelectedContent(user_id) {
+    $('.messenger-list-item').removeClass('active');
+    $(`.messenger-list-item[data-id="${user_id}"]`).addClass('active');
 }
 
 /**
@@ -484,4 +521,11 @@ actionOnScroll(
     $(".favourite").on('click', function (e) {
         e.preventDefault();
         star(getMessengerId());
+    })
+    
+    // delete message
+    $("body").on('click', '.dlt-message', function (e) {
+        e.preventDefault();
+        let id = $(this).data('id');
+        deleteMessage(id);
     })

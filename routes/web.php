@@ -43,4 +43,5 @@ Route::group(['middleware' => ['auth']], function () {
         // favorite routes
         Route::post('messenger/favorite', [MessengerController::class, 'favorite'])->name('messenger.favorite');
         Route::get('messenger/fetch-favorite', [MessengerController::class, 'fetchFavoritesList'])->name('messenger.fetch-favorite');
+        Route::delete('messenger/delete-message', [MessengerController::class, 'deleteMessage'])->name('messenger.delete-message');
 });
