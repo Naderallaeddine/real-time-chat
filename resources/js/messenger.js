@@ -130,8 +130,8 @@ function debounce(callback, delay) {
 
 function IDinfo(id) {
     $.ajax({
-        method: "GET",
-        url: "/messenger/id-info",
+        method: 'GET',
+        url: '/messenger/id-info',
         data: { id: id },
         beforeSend: function () {
             NProgress.start();
@@ -140,25 +140,34 @@ function IDinfo(id) {
         success: function (data) {
             // fetch messages
             fetchMessages(data.fetch.id, true);
+
+            $('.wsus__chat_info_gallery').html("");
+
+            // load gallery
+            if (data?.shared_photos) {
+                $('.nothing_share').addClass('d-none');
+                $('.wsus__chat_info_gallery').html(data.shared_photos);
+            } else {
+                $('.nothing_share').removeClass('d-none');
+            }
+
+            
+
             data.favorite == 1
-            ? $('.favourite').addClass('active')
-            : $('.favourite').removeClass('active');
+                ? $('.favourite').addClass('active')
+                : $('.favourite').removeClass('active');
 
             $(".messenger-header").find("img").attr("src", data.fetch.avatar);
             $(".messenger-header").find("h4").text(data.fetch.name);
 
-            $(".messenger-info-view .user_photo")
-                .find("img")
-                .attr("src", data.fetch.avatar);
+            $(".messenger-info-view .user_photo").find("img").attr("src", data.fetch.avatar);
             $(".messenger-info-view").find(".user_name").text(data.fetch.name);
-            $(".messenger-info-view")
-                .find(".user_unique_name")
-                .text(data.fetch.user_name);
+            $(".messenger-info-view").find(".user_unique_name").text(data.fetch.user_name);
             NProgress.done();
         },
         error: function (xhr, status, error) {
             disableChatBoxLoader();
-        },
+        }
     });
 }
 

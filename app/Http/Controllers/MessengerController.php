@@ -42,15 +42,25 @@ class MessengerController extends Controller
             'last_page' => $records->lastPage()
         ]);
     }
-
-    //fetch user by id
-    function fetchIdInfo(Request $request){
+    // fetch user by id
+    function fetchIdInfo(Request $request)
+    {
         $fetch = User::where('id', $request['id'])->first();
         $favorite = Favorite::where(['user_id' => Auth::user()->id, 'favorite_id' => $fetch->id])->exists();
+        $sharedPhotos = Message::where('from_id', Auth::user()->id)->where('to_id', $request->id)->whereNotNull('attachment')
+            ->orWhere('from_id', $request->id)->where('to_id', Auth::user()->id)->whereNotNull('attachment')
+            ->latest()->get();
+
+        $content = '';
+
+        foreach($sharedPhotos as $photo) {
+            $content .= view('messenger.components.gallery-item', compact('photo'))->render();
+        }
 
         return response()->json([
             'fetch' => $fetch,
             'favorite' => $favorite,
+            'shared_photos' => $content
         ]);
     }
     //send message
