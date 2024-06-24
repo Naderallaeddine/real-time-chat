@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\Message as MessageEvent;
 use App\Models\Favorite;
 use App\Models\Message;
 use App\Models\User;
@@ -10,7 +11,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Symfony\Component\Mailer\Event\MessageEvent;
+
 
 class MessengerController extends Controller
 {

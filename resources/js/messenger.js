@@ -18,43 +18,44 @@ const messageForm = $(".message-form"),
 const getMessengerId = () => $("meta[name=id]").attr("content");
 const setMessengerId = (id) => $("meta[name=id]").attr("content", id);
 
+
 /**
- *------------------------
- * Reusable Function
- *------------------------
+ * -----------------------------------
+ * Reusable Functions
+ * -----------------------------------
  */
 
-//This is for the load bar and the opacity of the chat
 function enableChatBoxLoader() {
-    $(".wsus__message_paceholder").removeClass("d-none");
+    $(".wsus__message_paceholder").removeClass('d-none');
 }
 
 function disableChatBoxLoader() {
-    $(".wsus__chat_app").removeClass("show_info");
-    $(".wsus__message_paceholder").addClass("d-none");
-    $(".wsus__message_paceholder_black").addClass("d-none");
+    $(".wsus__chat_app").removeClass('show_info');
+    $(".wsus__message_paceholder").addClass('d-none');
+    $(".wsus__message_paceholder_black").addClass('d-none');
+
 }
 
-//This function is for avatar
+
 function imagePreview(input, selector) {
     if (input.files && input.files[0]) {
         var render = new FileReader();
 
         render.onload = function (e) {
-            $(selector).attr("src", e.target.result);
-        };
+            $(selector).attr('src', e.target.result)
+        }
 
         render.readAsDataURL(input.files[0]);
     }
 }
 
-//This function is for searching
 let searchPage = 1;
 let noMoreDataSearch = false;
-let searchTempVal = ""; //if type another value
+let searchTempVal = "";
 let setSearchLoading = false;
 
 function searchUsers(query) {
+
     if (query != searchTempVal) {
         searchPage = 1;
         noMoreDataSearch = false;
@@ -63,8 +64,8 @@ function searchUsers(query) {
 
     if (!setSearchLoading && !noMoreDataSearch) {
         $.ajax({
-            method: "GET",
-            url: "/messenger/search",
+            method: 'GET',
+            url: '/messenger/search',
             data: { query: query, page: searchPage },
             beforeSend: function () {
                 setSearchLoading = true;
@@ -74,52 +75,51 @@ function searchUsers(query) {
                         <span class="visually-hidden">Loading...</span>
                     </div>
                 </div>
-                `;
-                $(".user_search_list_result").append(loader);
+                `
+                $('.user_search_list_result').append(loader);
             },
             success: function (data) {
                 setSearchLoading = false;
-                $(".user_search_list_result").find(".search-loader").remove();
+                $('.user_search_list_result').find('.search-loader').remove();
 
                 if (searchPage < 2) {
-                    $(".user_search_list_result").html(data.records);
+                    $('.user_search_list_result').html(data.records);
                 } else {
-                    $(".user_search_list_result").append(data.records);
+                    $('.user_search_list_result').append(data.records);
                 }
 
-                noMoreDataSearch = searchPage >= data?.last_page;
-                if (!noMoreDataSearch) searchPage += 1;
+                noMoreDataSearch = searchPage >= data?.last_page
+                if (!noMoreDataSearch) searchPage += 1
             },
             error: function (xhr, status, error) {
                 setSearchLoading = false;
-                $(".user_search_list_result").find(".search-loader").remove();
-            },
-        });
+                $('.user_search_list_result').find('.search-loader').remove();
+
+            }
+        })
     }
 }
 
 function actionOnScroll(selector, callback, topScroll = false) {
-    $(selector).on("scroll", function () {
+    $(selector).on('scroll', function () {
         let element = $(this).get(0);
-        const condition = topScroll
-            ? element.scrollTop == 0
-            : element.scrollTop + element.clientHeight >= element.scrollHeight;
+        const condition = topScroll ? element.scrollTop == 0 :
+            element.scrollTop + element.clientHeight >= element.scrollHeight;
 
         if (condition) {
             callback();
         }
-    });
+    })
 }
 
-//This function is for dealy the search
 function debounce(callback, delay) {
     let timerId;
     return function (...args) {
         clearTimeout(timerId);
         timerId = setTimeout(() => {
             callback.apply(this, args);
-        }, delay);
-    };
+        }, delay)
+    }
 }
 
 /**
@@ -172,9 +172,9 @@ function IDinfo(id) {
 }
 
 /**
- *------------------------
- * send message
- *------------------------
+ * ----------------------------------------------
+ * Send Message
+ * ----------------------------------------------
  */
 
 function sendMessage() {
@@ -188,22 +188,20 @@ function sendMessage() {
         formData.append("id", getMessengerId());
         formData.append("temporaryMsgId", tempID);
         formData.append("_token", csrf_token);
+
         $.ajax({
             method: "POST",
-            url: "messenger/send-message",
+            url: "/messenger/send-message",
             data: formData,
             dataType: "JSON",
             processData: false,
             contentType: false,
             beforeSend: function () {
+                // add temp message on dom
                 if (hasAttachment) {
-                    messageBoxContainer.append(
-                        sendTempMessageCard(inputValue, tempID, true)
-                    );
+                    messageBoxContainer.append(sendTempMessageCard(inputValue, tempID, true));
                 } else {
-                    messageBoxContainer.append(
-                        sendTempMessageCard(inputValue, tempID)
-                    );
+                    messageBoxContainer.append(sendTempMessageCard(inputValue, tempID));
                 }
                 $('.no_messages').addClass('d-none');
                 scrollToBottom(messageBoxContainer);
@@ -220,12 +218,14 @@ function sendMessage() {
                 initVenobox();
 
             },
-            error: function (xhr, status, error) {},
-        });
+            error: function (xhr, status, error) {
+
+            }
+        })
     }
+
 }
 
-//handle the send msg in the body
 function sendTempMessageCard(message, tempId, attachment = false) {
     if (attachment) {
         return `
@@ -236,16 +236,12 @@ function sendTempMessageCard(message, tempId, attachment = false) {
                         <span class="visually-hidden">Loading...</span>
                     </div>
                 </div>
-                ${
-                    message.length > 0
-                        ? `<p class="messages">${message}</p>`
-                        : ""
-                }
+                ${message.length > 0 ? `<p class="messages">${message}</p>` : ''}
 
                 <span class="clock"><i class="fas fa-clock"></i> now</span>
             </div>
         </div>
-        `;
+        `
     } else {
         return `
         <div class="wsus__single_chat_area message-card" data-id="${tempId}">
@@ -254,8 +250,9 @@ function sendTempMessageCard(message, tempId, attachment = false) {
                 <span class="clock"><i class="fas fa-clock"></i> now</span>
             </div>
         </div>
-        `;
+        `
     }
+
 }
 
 function receiveMessageCard(e) {
@@ -280,6 +277,7 @@ function receiveMessageCard(e) {
         `
     }
 }
+
 function messageFormReset() {
     $('.attachment-block').addClass('d-none');
 
@@ -311,7 +309,7 @@ function fetchMessages(id, newFetch = false) {
             data: {
                 _token: csrf_token,
                 id: id,
-                page: messagesPage,
+                page: messagesPage
             },
             beforeSend: function () {
                 messagesLoading = true;
@@ -323,27 +321,24 @@ function fetchMessages(id, newFetch = false) {
                 </div>
                 `;
                 messageBoxContainer.prepend(loader);
+
             },
             success: function (data) {
                 messagesLoading = false;
                 // remove the loader
                 messageBoxContainer.find(".messages-loader").remove();
                 // make messages seen
+                makeSeen(true);
 
                 if (messagesPage == 1) {
                     messageBoxContainer.html(data.messages);
                     scrollToBottom(messageBoxContainer);
                 } else {
-                    const lastMsg = $(messageBoxContainer)
-                        .find(".message-card")
-                        .first();
-                    const curOffset =
-                        lastMsg.offset().top - messageBoxContainer.scrollTop();
+                    const lastMsg = $(messageBoxContainer).find(".message-card").first();
+                    const curOffset = lastMsg.offset().top - messageBoxContainer.scrollTop();
 
                     messageBoxContainer.prepend(data.messages);
-                    messageBoxContainer.scrollTop(
-                        lastMsg.offset().top - curOffset
-                    );
+                    messageBoxContainer.scrollTop(lastMsg.offset().top - curOffset);
                 }
 
                 // pagination lock and page increment
@@ -351,12 +346,13 @@ function fetchMessages(id, newFetch = false) {
                 if (!noMoreMessages) messagesPage += 1;
 
                 initVenobox();
+
                 disableChatBoxLoader();
             },
             error: function (xhr, status, error) {
                 console.log(error);
-            },
-        });
+            }
+        })
     }
 }
 
@@ -385,7 +381,7 @@ function getContacts() {
                     </div>
                 </div>
                 `;
-                messengerContactBox.append(loader);
+                messengerContactBox.append(loader)
             },
             success: function (data) {
                 contactLoading = false;
@@ -399,16 +395,15 @@ function getContacts() {
                 noMoreContacts = contactsPage >= data?.last_page;
                 if (!noMoreContacts) contactsPage += 1;
 
-                
+                updateUserActiveList()
             },
             error: function (xhr, status, error) {
                 contactLoading = false;
                 messengerContactBox.find(".contact-loader").remove();
-            },
-        });
+            }
+        })
     }
 }
-
 /**
  * ----------------------------------------------
  * Update contact item
@@ -457,7 +452,6 @@ function makeSeen(status) {
         error: function () {}
     })
 }
-
 
 /**
  * ----------------------------------------------
@@ -520,14 +514,11 @@ function deleteMessage(message_id) {
     });
 }
 
+
 function updateSelectedContent(user_id) {
     $('.messenger-list-item').removeClass('active');
     $(`.messenger-list-item[data-id="${user_id}"]`).addClass('active');
 }
-
-
-
-
 
 /**
  * ----------------------------------------------
@@ -535,12 +526,11 @@ function updateSelectedContent(user_id) {
  * ----------------------------------------------
  */
 function scrollToBottom(container) {
-    $(container)
-        .stop()
-        .animate({
-            scrollTop: $(container)[0].scrollHeight,
-        });
+    $(container).stop().animate({
+        scrollTop: $(container)[0].scrollHeight
+    });
 }
+
 /**
  * ----------------------------------------------
  * initialize venobox.js
@@ -578,36 +568,113 @@ window.Echo.private('message.' + auth_id)
         }
     );
 
+// Listen to online channel
+window.Echo.join('online')
+    .here((users) => {
+        // set active users
+        setActiveUserIds(users);
+        $.each(users, function (index, user) {
+            userActive(user.id)
+        })
+    })
+    .joining((user) => {
+        // add user to array
+        addNewUserId(user.id);
+        userActive(user.id)
+    })
+    .leaving((user) => {
+        // remove user from array
+        removeUserId(user.id);
+        userInactive(user.id)
+    })
+
+
+function updateUserActiveList() {
+    $('.messenger-list-item').each(function (index, value) {
+        let id = $(this).data('id');
+        if (activeUsersIds.includes(id)) userActive(id);
+
+    })
+}
+
+function userActive(id) {
+    let contactItem = $(`.messenger-list-item[data-id="${id}"]`).find('.img').find('span');
+    contactItem.removeClass('inactive');
+    contactItem.addClass('active');
+}
+
+function userInactive(id) {
+    let contactItem = $(`.messenger-list-item[data-id="${id}"]`).find('.img').find('span');
+    contactItem.removeClass('active');
+    contactItem.addClass('inactive');
+}
+
+// set active users id to array
+
+function setActiveUserIds(users) {
+    $.each(users, function (index, user) {
+        activeUsersIds.push(user.id);
+    });
+}
+
+// add new user to array
+function addNewUserId(id) {
+    activeUsersIds.push(id);
+}
+
+// remove user from array
+function removeUserId(id) {
+    let index = activeUsersIds.indexOf(id);
+
+    if (index !== -1) {
+        activeUsersIds.splice(index, 1);
+    }
+}
+
+
+
 /**
- *------------------------
- * Dom LOad
- *------------------------
+ * -----------------------------------
+ * On Dom Load
+ * -----------------------------------
  */
 
- $(document).ready(function () {
-getContacts();
+$(document).ready(function () {
 
-$("#select_file").change(function () {
-    imagePreview(this, ".profile-image-preview");
-});
+    getContacts();
 
-// Search action on keyup
-const debouncedSearch = debounce(function () {
-    const value = $(".user_search").val();
-    searchUsers(value);
-}, 500);
+    if (window.innerWidth < 768) {
+        $("body").on('click', '.messenger-list-item', function () {
+            $(".wsus__user_list").addClass('d-none');
+        });
 
-$(".user_search").on("keyup", function () {
-    let query = $(this).val();
-    if (query.length > 0) {
-        debouncedSearch();
+        $("body").on('click', '.back_to_list', function () {
+            $(".wsus__user_list").removeClass('d-none');
+        });
     }
-});
-// search pagination
-actionOnScroll(".user_search_list_result", function () {
-    let value = $(".user_search").val();
-    searchUsers(value);
-});
+
+    $('#select_file').change(function () {
+        imagePreview(this, '.profile-image-preview')
+    });
+
+    // Search action on keyup
+    const debouncedSearch = debounce(function () {
+        const value = $('.user_search').val();
+        searchUsers(value);
+    }, 500);
+
+    $('.user_search').on('keyup', function () {
+        let query = $(this).val();
+        if (query.length > 0) {
+            debouncedSearch();
+        }
+    })
+    // search pagination
+    actionOnScroll(".user_search_list_result", function () {
+        let value = $('.user_search').val();
+        searchUsers(value);
+
+    })
 
     // click action for messenger list item
     $("body").on("click", ".messenger-list-item", function () {
@@ -617,31 +684,29 @@ actionOnScroll(".user_search_list_result", function () {
         IDinfo(dataId);
         messageFormReset();
     });
-//for sending message
-$(".message-form").on("submit", function (e) {
-    e.preventDefault();
-    sendMessage();
-});
 
-//for sending attachment
-$(".attachment-input").change(function () {
-    imagePreview(this, ".attachment-preview");
-    $(".attachment-block").removeClass("d-none");
-});
+    //Send message
+    $(".message-form").on("submit", function (e) {
+        e.preventDefault();
+        sendMessage();
+    })
 
-//for cancelation img &msg
-$(".cancel-attachment").on("click", function () {
-    messageFormReset();
-});
 
-// message pagination
-actionOnScroll(
-    ".wsus__chat_area_body",
-    function () {
+    // send attachment
+    $('.attachment-input').change(function () {
+        imagePreview(this, '.attachment-preview');
+        $('.attachment-block').removeClass('d-none');
+    });
+
+    $(".cancel-attachment").on('click', function () {
+        messageFormReset();
+    });
+
+    // message pagination
+    actionOnScroll(".wsus__chat_area_body", function () {
         fetchMessages(getMessengerId());
-    },
-    true
-);
+    }, true)
+
     // Contacts pagination
     actionOnScroll(".messenger-contacts", function () {
         getContacts();
@@ -659,4 +724,26 @@ actionOnScroll(
         let id = $(this).data('id');
         deleteMessage(id);
     })
- })
+
+
+
+    // custom hight adjustment
+    function adjustHeight() {
+        var windowHeight = $(window).height();
+        $('.wsus__chat_area_body').css('height', (windowHeight - 120) + 'px');
+        $('.messenger-contacts').css('max-height', (windowHeight - 393) + 'px');
+        $('.wsus__chat_info_gallery').css('max-height', (windowHeight - 400) + 'px');
+        $('.user_search_list_result').css({
+            'height': (windowHeight - 130) + 'px',
+        });
+    }
+
+    // Call the function initially
+    adjustHeight();
+
+    // Call the function whenever the window is resized
+    $(window).resize(function () {
+        adjustHeight();
+    });
+
+});
