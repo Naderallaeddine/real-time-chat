@@ -10,6 +10,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\Mailer\Event\MessageEvent;
 
 class MessengerController extends Controller
 {
@@ -82,6 +83,8 @@ class MessengerController extends Controller
         if ($attachmentPath) $message->attachment = json_encode($attachmentPath);
         $message->save();
 
+          // broadcast event
+          MessageEvent::dispatch($message);
 
         return response()->json([
             'message' => $message->attachment ? $this->messageCard($message, true) : $this->messageCard($message),

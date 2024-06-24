@@ -151,7 +151,7 @@ function IDinfo(id) {
                 $('.nothing_share').removeClass('d-none');
             }
 
-
+            initVenobox();
 
             data.favorite == 1
                 ? $('.favourite').addClass('active')
@@ -217,6 +217,7 @@ function sendMessage() {
                 const tempMsgCardElement = messageBoxContainer.find(`.message-card[data-id=${data.tempID}]`);
                 tempMsgCardElement.before(data.message);
                 tempMsgCardElement.remove();
+                initVenobox();
 
             },
             error: function (xhr, status, error) {},
@@ -349,6 +350,7 @@ function fetchMessages(id, newFetch = false) {
                 noMoreMessages = messagesPage >= data?.last_page;
                 if (!noMoreMessages) messagesPage += 1;
 
+                initVenobox();
                 disableChatBoxLoader();
             },
             error: function (xhr, status, error) {
@@ -397,7 +399,7 @@ function getContacts() {
                 noMoreContacts = contactsPage >= data?.last_page;
                 if (!noMoreContacts) contactsPage += 1;
 
-                updateUserActiveList()
+                
             },
             error: function (xhr, status, error) {
                 contactLoading = false;
@@ -524,13 +526,7 @@ function updateSelectedContent(user_id) {
 }
 
 
-function updateUserActiveList() {
-    $('.messenger-list-item').each(function (index, value) {
-        let id = $(this).data('id');
-        if (activeUsersIds.includes(id)) userActive(id);
 
-    })
-}
 
 
 /**
@@ -545,6 +541,42 @@ function scrollToBottom(container) {
             scrollTop: $(container)[0].scrollHeight,
         });
 }
+/**
+ * ----------------------------------------------
+ * initialize venobox.js
+ * ----------------------------------------------
+ */
+function initVenobox() {
+    $('.venobox').venobox();
+}
+
+/**
+ * ----------------------------------------------
+ * Play message sound
+ * ----------------------------------------------
+ */
+function playNotificationSound() {
+    const sound = new Audio(`/default/message-sound.mp3`);
+    sound.play();
+}
+
+// Listen to message cannel
+window.Echo.private('message.' + auth_id)
+    .listen("Message",
+        (e) => {
+            console.log(e);
+            if (getMessengerId() != e.from_id) {
+                updateContactItem(e.from_id);
+                playNotificationSound();
+            }
+
+            let message = receiveMessageCard(e);
+            if (getMessengerId() == e.from_id) {
+                messageBoxContainer.append(message);
+                scrollToBottom(messageBoxContainer);
+            }
+        }
+    );
 
 /**
  *------------------------
