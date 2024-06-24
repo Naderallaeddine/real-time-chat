@@ -205,14 +205,19 @@ function sendMessage() {
                         sendTempMessageCard(inputValue, tempID)
                     );
                 }
-                messageFormRest();
+                $('.no_messages').addClass('d-none');
+                scrollToBottom(messageBoxContainer);
+                messageFormReset();
             },
             success: function (data) {
-                const tempMsgCardElement = messageBoxContainer.find(
-                    `.message-card[data-id=${data.tempID}]`
-                );
+                makeSeen(true)
+                // update contact item
+                updateContactItem(getMessengerId());
+
+                const tempMsgCardElement = messageBoxContainer.find(`.message-card[data-id=${data.tempID}]`);
                 tempMsgCardElement.before(data.message);
                 tempMsgCardElement.remove();
+
             },
             error: function (xhr, status, error) {},
         });
@@ -250,6 +255,36 @@ function sendTempMessageCard(message, tempId, attachment = false) {
         </div>
         `;
     }
+}
+
+function receiveMessageCard(e) {
+    if (e.attachment) {
+        return `
+        <div class="wsus__single_chat_area message-card" data-id="${e.id}">
+            <div class="wsus__single_chat">
+            <a class="venobox" data-gall="gallery${e.id}" href="${e.attachment}">
+                <img src="${e.attachment}" alt="" class="img-fluid w-100">
+            </a>
+                ${e.body != null && e.body.length > 0 ? `<p class="messages">${e.body}</p>` : ''}
+            </div>
+        </div>
+        `
+    } else {
+        return `
+        <div class="wsus__single_chat_area message-card" data-id="${e.id}">
+            <div class="wsus__single_chat">
+                <p class="messages">${e.body}</p>
+            </div>
+        </div>
+        `
+    }
+}
+function messageFormReset() {
+    $('.attachment-block').addClass('d-none');
+
+    messageForm.trigger("reset");
+    var emojiElt = $('#example1').emojioneArea();
+    emojiElt.data("emojioneArea").setText('');
 }
 
 /**
@@ -361,6 +396,8 @@ function getContacts() {
 
                 noMoreContacts = contactsPage >= data?.last_page;
                 if (!noMoreContacts) contactsPage += 1;
+
+                updateUserActiveList()
             },
             error: function (xhr, status, error) {
                 contactLoading = false;
@@ -369,6 +406,56 @@ function getContacts() {
         });
     }
 }
+
+/**
+ * ----------------------------------------------
+ * Update contact item
+ * ----------------------------------------------
+ */
+
+function updateContactItem(user_id) {
+    if (user_id != auth_id) {
+        $.ajax({
+            method: "GET",
+            url: "/messenger/update-contact-item",
+            data: { user_id: user_id },
+            success: function (data) {
+                messengerContactBox.find('.no_contact').remove();
+                messengerContactBox.find(`.messenger-list-item[data-id="${user_id}"]`).remove();
+                messengerContactBox.prepend(data.contact_item);
+
+                if (activeUsersIds.includes(+user_id)) {
+                    userActive(user_id);
+                }
+
+                if (user_id == getMessengerId()) updateSelectedContent(user_id);
+            },
+            error: function (xhr, status, error) {
+
+            }
+        });
+    }
+}
+
+/**
+ * ----------------------------------------------
+ * Make messages seen
+ * ----------------------------------------------
+ */
+function makeSeen(status) {
+    $(`.messenger-list-item[data-id="${getMessengerId()}"]`).find('.unseen_count').remove();
+    $.ajax({
+        method: "POST",
+        url: "/messenger/make-seen",
+        data: {
+            _token: csrf_token,
+            id: getMessengerId()
+        },
+        success: function () {},
+        error: function () {}
+    })
+}
+
 
 /**
  * ----------------------------------------------
@@ -431,16 +518,20 @@ function deleteMessage(message_id) {
     });
 }
 
-//function for cancel the img and msg
-function messageFormRest() {
-    $(".attachment-block").addClass("d-none");
-    $(".emojionearea-editor").text("");
-    messageForm.trigger("reset");
-}
 function updateSelectedContent(user_id) {
     $('.messenger-list-item').removeClass('active');
     $(`.messenger-list-item[data-id="${user_id}"]`).addClass('active');
 }
+
+
+function updateUserActiveList() {
+    $('.messenger-list-item').each(function (index, value) {
+        let id = $(this).data('id');
+        if (activeUsersIds.includes(id)) userActive(id);
+
+    })
+}
+
 
 /**
  * ----------------------------------------------
@@ -460,6 +551,8 @@ function scrollToBottom(container) {
  * Dom LOad
  *------------------------
  */
+
+ $(document).ready(function () {
 getContacts();
 
 $("#select_file").change(function () {
@@ -484,13 +577,14 @@ actionOnScroll(".user_search_list_result", function () {
     searchUsers(value);
 });
 
-//click action for messenger list item
-$("body").on("click", ".messenger-list-item", function () {
-    const dataId = $(this).attr("data-id");
-    setMessengerId(dataId);
-    IDinfo(dataId);
-});
-
+    // click action for messenger list item
+    $("body").on("click", ".messenger-list-item", function () {
+        const dataId = $(this).attr("data-id");
+        updateSelectedContent(dataId)
+        setMessengerId(dataId);
+        IDinfo(dataId);
+        messageFormReset();
+    });
 //for sending message
 $(".message-form").on("submit", function (e) {
     e.preventDefault();
@@ -505,7 +599,7 @@ $(".attachment-input").change(function () {
 
 //for cancelation img &msg
 $(".cancel-attachment").on("click", function () {
-    messageFormRest();
+    messageFormReset();
 });
 
 // message pagination
@@ -516,16 +610,21 @@ actionOnScroll(
     },
     true
 );
+    // Contacts pagination
+    actionOnScroll(".messenger-contacts", function () {
+        getContacts();
+    });
 
     // add/remove to favorite
     $(".favourite").on('click', function (e) {
         e.preventDefault();
         star(getMessengerId());
     })
-    
+
     // delete message
     $("body").on('click', '.dlt-message', function (e) {
         e.preventDefault();
         let id = $(this).data('id');
         deleteMessage(id);
     })
+ })
